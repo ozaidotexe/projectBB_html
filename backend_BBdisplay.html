@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --bg: #0f0f0f;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body { 
+            font-family: 'Inter', -apple-system, sans-serif; 
+            background: var(--bg);
+            background-image: radial-gradient(circle at center, #1a2a6c 0%, #0f0f0f 100%);
+            color: white; 
+            text-align: center; 
+            margin: 0;
+            padding: 20px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 85%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+
+        /* Radar Styling Baru */
+        .radar-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            margin: 0 auto 30px;
+            display: none;
+        }
+
+        .radar-circle {
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            position: absolute;
+            top: 0; left: 0;
+            opacity: 0;
+            animation: pulse-new 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-new {
+            0% { transform: scale(0.1); opacity: 0.8; }
+            100% { transform: scale(1.2); opacity: 0; }
+        }
+
+        .radar-scanner {
+            width: 50%;
+            height: 50%;
+            background: conic-gradient(from 0deg, transparent, var(--primary));
+            position: absolute;
+            top: 0; left: 0;
+            transform-origin: bottom right;
+            border-radius: 100% 0 0 0;
+            animation: rotate 2s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Tombol Hunt */
+        .btn-hunt { 
+            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            border-radius: 20px; 
+            font-size: 1.1rem;
+            font-weight: 800; 
+            width: 100%; 
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-hunt:active {
+            transform: scale(0.95);
+        }
+
+        .status-text {
+            color: var(--primary);
+            font-size: 0.9rem;
+            margin-top: 20px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        h2 { font-size: 1.5rem; margin-bottom: 10px; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #888; margin-bottom: 30px; font-size: 0.85rem; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-ui">
+        <h2>BUG BOX TERMINAL</h2>
+        <p id="desc">🔍 Radar Aktif, Ada harta karun tersembunyi di sekitar sini. Jangan biarkan mereka lolos!</p>
+        
+        <div id="radar" class="radar-container">
+            <div class="radar-circle"></div>
+            <div class="radar-circle" style="animation-delay: 0.5s"></div>
+            <div class="radar-scanner"></div>
+            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2rem; filter: drop-shadow(0 0 10px var(--primary));">💎</div>
+        </div>
+
+        <button id="hunt-btn" class="btn-hunt" onclick="startHunting()">🎯 Hunt Now !!</button>
+        <div id="status" class="status-text">⚡ System Online. Menunggu perintah eksekusi hunting...</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); 
+
+        function startHunting() {
+            const btn = document.getElementById('hunt-btn');
+            const radar = document.getElementById('radar');
+            const status = document.getElementById('status');
+            const desc = document.getElementById('desc');
+
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+
+            btn.style.display = 'none';
+            radar.style.display = 'block';
+            desc.innerText = "Scanning nearby Bug's...";
+            
+            let progress = 0;
+            const texts = [
+                "📡 Mencari Koordinat Aset Langka...",
+                "🛡️ Menembus Pertahanan Sistem...",
+                "⚡ Menghitung potensi profit...",
+                "📦 Paket diamankan. Siap kirim...!"
+            ];
+            const interval = setInterval(() => {
+                status.innerText = texts[progress];
+                progress++;
+                
+                if (progress >= texts.length) {
+                    clearInterval(interval);
+                    finishHunting();
+                }
+            }, 1000);
+        }
+
+        function finishHunting() {
+            const status = document.getElementById('status');
+            status.style.color = "#00ff88";
+            status.innerText = "🎯 HUNT SUCCESSFUL!";
+
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+            setTimeout(() => {
+                tg.sendData("proses_hunt");
+                tg.close();
+            }, 800);
+        }
+    </script>
+</body>
+</html>
