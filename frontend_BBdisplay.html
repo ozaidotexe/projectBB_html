@@ -218,124 +218,141 @@
 
         // 2. FUNGSI LOGIN PLAYER NYATA (TEMBAK DATABASE MYSQL VIA PYTHON)
         async function loginPlayer() {
-            const inputId = document.getElementById('telegram-id-input').value.trim();
-            if(!inputId) {
-                alert("Silakan masukkan User ID Telegram Anda!");
-                return;
-            }
+			// ✅ Mengambil nilai dari ID input yang benar (#input-uid)
+			const inputId = document.getElementById('input-uid').value.trim(); 
+			if(!inputId) {
+				alert("Silakan masukkan User ID Anda!");
+				return;
+			}
 
-            currentPlayerId = inputId;
-            const loginBtn = document.querySelector('#login-section button');
-            loginBtn.innerText = "⏳ Memuat data dari database...";
-            loginBtn.disabled = true;
+			currentPlayerId = inputId;
+			const loginBtn = document.querySelector('#login-section button');
+			loginBtn.innerText = "⏳ Memuat data dari database...";
+			loginBtn.disabled = true;
 
-            try {
-                // Mengambil data asli dari database MySQL lewat Flask API Python
-                const response = await fetch(`${API_BASE_URL}/api/user/info?user_id=${currentPlayerId}`);
-                const resData = await response.json();
+			try {
+				// Fetch 1: Mengambil data user
+				const response = await fetch(`${API_BASE_URL}/api/user/info?user_id=${currentPlayerId}`);
+				const resData = await response.json();
 
-                if(resData.status === "success") {
-                    // Sembunyikan form login, buka dashboard game utama
-                    document.getElementById('login-section').classList.add('hidden');
-                    document.getElementById('game-dashboard').classList.remove('hidden');
-                    
-                    // Tulis data asli database ke layar browser
-                    renderDashboardData(resData.data);
-                    updateMarketStatus();
-                } else {
-                    alert(resData.message);
-                    loginBtn.innerText = "Masuk Ke Arena";
-                    loginBtn.disabled = false;
-                }
-            } catch (err) {
-                alert("Gagal terhubung ke Server API! Pastikan file 'bugbox_01.py' sudah Anda jalankan.");
-                loginBtn.innerText = "Masuk Ke Arena";
-                loginBtn.disabled = false;
-            }
-        }
+				if(resData.status === "success") {
+					document.getElementById('login-section').classList.add('hidden');
+					document.getElementById('game-dashboard').classList.remove('hidden');
+					renderDashboardData(resData.data);
+					updateMarketStatus();
+				} else {
+					alert(resData.message || "User tidak ditemukan!");
+					loginBtn.innerText = "MASUK GAME";
+					loginBtn.disabled = false;
+				}
+			} catch (err) {
+				alert("Gagal terhubung ke Server API! Pastikan backend Python sudah berjalan di port 5001.");
+				loginBtn.innerText = "MASUK GAME";
+				loginBtn.disabled = false;
+			}
+		}
 
         // FUNGSI PEMBANTU UNTUK MENULIS DATA DATABASE KE LAYAR HTML
         function renderDashboardData(data) {
-            document.getElementById('player-id-display').innerText = data.user_id;
-            document.getElementById('user-points').innerText = Number(data.points).toLocaleString('id-ID');
-            document.getElementById('p2p-rekening').innerText = data.rekening;
-            document.getElementById('estimasi-aset').innerText = "Rp " + Number(data.estimasi_aset).toLocaleString('id-ID');
-            document.getElementById('status-reservasi').innerText = data.reservation;
-            
-            // Ganti 'UsernameBotKamu' dengan username bot Telegram asli Anda nanti
-            document.getElementById('ref-link').innerText = `https://t.me/UsernameBotKamu?start=${data.user_id}`;
+			// 1. Render Profil & Header
+			document.getElementById('player-id-display').innerText = "ID: " + data.user_id;
+			document.getElementById('prof-id').innerText = data.user_id;
+			document.getElementById('user-points').innerText = Number(data.points || 0).toLocaleString('id-ID');
+			document.getElementById('prof-rek').innerText = data.rekening || "-";
+			document.getElementById('prof-est-aset').innerText = "Rp " + Number(data.estimasi_aset || 0).toLocaleString('id-ID');
+			document.getElementById('prof-res').innerText = data.reservation || "Kosong";
+			document.getElementById('ref-link').innerText = `https://t.me/UsernameBotKamu?start=${data.user_id}`;
 
-            // Render daftar aset digital dari MySQL secara dinamis ke dalam tabel
-            const tableBody = document.getElementById('asset-table-body');
-            tableBody.innerHTML = ""; // Hapus data tiruan lama
+			// 2. RENDER LIVE MARKET / ARENA HUNTING (TAMBAHAN BARU)
+			if (data.active_market) {
+				document.getElementById('market-item-name').innerText = data.active_market.item_name || "BOX BRONZE";
+				document.getElementById('market-item-range').innerText = `Rp${Number(data.active_market.min_price || 0).toLocaleString('id-ID')} - Rp${Number(data.active_market.max_price || 0).toLocaleString('id-ID')}`;
+				document.getElementById('market-item-profit').innerText = `+${data.active_market.profit || 15}%`;
+				document.getElementById('market-item-hold').innerText = `${data.active_market.hold_days || 1} Hari`;
+			}
 
-            if(data.assets.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Anda belum memiliki kotak aset digital saat ini.</td></tr>`;
-            } else {
-                data.assets.forEach(asset => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-gray-800 hover:bg-gray-800/50 transition-colors";
-                    row.innerHTML = `
-                        <td class="px-6 py-4 font-mono text-sm text-gray-400">#${asset.asset_id}</td>
-                        <td class="px-6 py-4 font-semibold text-amber-400">${asset.item_name}</td>
-                        <td class="px-6 py-4 text-green-400 font-mono">Rp ${Number(asset.buy_price).toLocaleString('id-ID')}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-medium ${asset.status === 'HOLD' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}">
-                                ${asset.status}
-                            </span>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            }
-        }
+			// 3. Render Tabel Aset (Koleksi Aset)
+			const tableBody = document.getElementById('asset-table-body');
+			tableBody.innerHTML = ""; 
+
+			if(!data.assets || data.assets.length === 0) {
+				tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Anda belum memiliki kotak aset digital saat ini.</td></tr>`;
+			} else {
+				data.assets.forEach(asset => {
+					const row = document.createElement('tr');
+					row.className = "border-b border-gray-800 hover:bg-gray-800/50 transition-colors";
+					row.innerHTML = `
+						<td class="px-6 py-4 font-mono text-sm text-gray-400">#${asset.asset_id}</td>
+						<td class="px-6 py-4 font-semibold text-amber-400">${asset.item_name}</td>
+						<td class="px-6 py-4 text-green-400 font-mono">Rp ${Number(asset.buy_price).toLocaleString('id-ID')}</td>
+						<td class="px-6 py-4">
+							<span class="px-2.5 py-1 rounded-full text-xs font-medium ${asset.status === 'HOLD' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}">
+								${asset.status}
+							</span>
+						</td>
+					`;
+					tableBody.appendChild(row);
+				});
+			}
+		}
 
         // 3. FUNGSI BERBURU (HUNTING) ASLI
         async function processHunt() {
-            const btn = document.getElementById('btn-hunt');
-            const cooldownDisplay = document.getElementById('cooldown-display');
+    if (!currentPlayerId) {
+        alert("Silakan login terlebih dahulu!");
+        return;
+    }
 
-            btn.disabled = true;
-            cooldownDisplay.classList.remove('hidden');
-            cooldownDisplay.innerText = "⏳ Memproses aksi berburu di server...";
+    const btn = document.getElementById('btn-hunt');
+    const cooldownDisplay = document.getElementById('cooldown-display');
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/user/hunt`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: currentPlayerId })
-                });
-                const result = await response.json();
-                
-                if(result.status === "success") {
-                    alert(result.message);
-                    
-                    // Segera refresh saldo koin/poin & tabel aset terbaru dari MySQL setelah sukses hunt
-                    const refreshRes = await fetch(`${API_BASE_URL}/api/user/info?user_id=${currentPlayerId}`);
-                    const refreshData = await refreshRes.json();
-                    if(refreshData.status === "success") renderDashboardData(refreshData.data);
-                } else {
-                    alert(result.message);
-                }
+    btn.disabled = true;
+    cooldownDisplay.classList.remove('hidden');
+    cooldownDisplay.innerText = "⏳ Memproses aksi berburu di server...";
 
-                // Sistem hitung mundur (cooldown) visual 20 detik di layar
-                let sisaWaktu = 20;
-                const interval = setInterval(() => {
-                    sisaWaktu--;
-                    cooldownDisplay.innerText = `⏳ Cooldown aktif (${sisaWaktu} detik)...`;
-                    if(sisaWaktu <= 0) {
-                        clearInterval(interval);
-                        btn.disabled = false;
-                        cooldownDisplay.classList.add('hidden');
-                    }
-                }, 1000);
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/user/hunt`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: currentPlayerId })
+        });
+        const result = await response.json();
+        
+        if(result.status === "success") {
+            // Tampilkan info di layar alih-alih pake alert()
+            cooldownDisplay.innerText = "🎉 " + result.message;
+            cooldownDisplay.className = "text-xs text-green-400 mt-2 font-semibold";
 
-            } catch (err) {
-                alert("Koneksi ke backend gagal atau server offline!");
+            // Segera refresh saldo koin/poin & tabel aset terbaru dari MySQL
+            const refreshRes = await fetch(`${API_BASE_URL}/api/user/info?user_id=${currentPlayerId}`);
+            const refreshData = await refreshRes.json();
+            if(refreshData.status === "success") {
+                renderDashboardData(refreshData.data);
+            }
+        } else {
+            cooldownDisplay.innerText = "❌ " + result.message;
+            cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
+        }
+
+        // Sistem hitung mundur (cooldown) 20 detik
+        let sisaWaktu = 20;
+        const interval = setInterval(() => {
+            sisaWaktu--;
+            cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
+            cooldownDisplay.innerText = `⏳ Cooldown aktif (${sisaWaktu} detik)...`;
+            if(sisaWaktu <= 0) {
+                clearInterval(interval);
                 btn.disabled = false;
                 cooldownDisplay.classList.add('hidden');
             }
-        }
+        }, 1000);
+
+    } catch (err) {
+        cooldownDisplay.innerText = "❌ Koneksi ke backend gagal!";
+        cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
+        btn.disabled = false;
+    }
+}
 
         // 4. FUNGSI MENYALIN LINK REFERRAL PLAYER
         function copyRef() {
