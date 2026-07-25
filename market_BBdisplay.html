@@ -1,178 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --primary: #00d2ff;
-            --secondary: #3a7bd5;
-            --bg: #0f0f0f;
-            --glass: rgba(255, 255, 255, 0.05);
-        }
-
-        body { 
-            font-family: 'Inter', -apple-system, sans-serif; 
-            background: var(--bg);
-            background-image: radial-gradient(circle at center, #1a2a6c 0%, #0f0f0f 100%);
-            color: white; 
-            text-align: center; 
-            margin: 0;
-            padding: 20px; 
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .container {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            padding: 30px;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
-            width: 85%;
-            max-width: 400px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-        }
-
-        /* Radar Styling Baru */
-        .radar-container {
-            position: relative;
-            width: 180px;
-            height: 180px;
-            margin: 0 auto 30px;
-            display: none;
-        }
-
-        .radar-circle {
-            width: 100%;
-            height: 100%;
-            border: 2px solid var(--primary);
-            border-radius: 50%;
-            position: absolute;
-            top: 0; left: 0;
-            opacity: 0;
-            animation: pulse-new 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-        }
-
-        @keyframes pulse-new {
-            0% { transform: scale(0.1); opacity: 0.8; }
-            100% { transform: scale(1.2); opacity: 0; }
-        }
-
-        .radar-scanner {
-            width: 50%;
-            height: 50%;
-            background: conic-gradient(from 0deg, transparent, var(--primary));
-            position: absolute;
-            top: 0; left: 0;
-            transform-origin: bottom right;
-            border-radius: 100% 0 0 0;
-            animation: rotate 2s linear infinite;
-        }
-
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Tombol Hunt */
-        .btn-hunt { 
-            background: linear-gradient(135deg, var(--primary), var(--secondary)); 
-            color: white; 
-            border: none; 
-            padding: 18px; 
-            border-radius: 20px; 
-            font-size: 1.1rem;
-            font-weight: 800; 
-            width: 100%; 
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.3);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .btn-hunt:active {
-            transform: scale(0.95);
-        }
-
-        .status-text {
-            color: var(--primary);
-            font-size: 0.9rem;
-            margin-top: 20px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        h2 { font-size: 1.5rem; margin-bottom: 10px; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p { color: #888; margin-bottom: 30px; font-size: 0.85rem; line-height: 1.4; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUG BOX Terminal - Market Display</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div class="container" id="main-ui">
-        <h2>BUG BOX TERMINAL</h2>
-        <p id="desc">🔍 Radar Aktif, Ada harta karun tersembunyi di sekitar sini. Jangan biarkan mereka lolos!</p>
-        
-        <div id="radar" class="radar-container">
-            <div class="radar-circle"></div>
-            <div class="radar-circle" style="animation-delay: 0.5s"></div>
-            <div class="radar-scanner"></div>
-            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2rem; filter: drop-shadow(0 0 10px var(--primary));">💎</div>
+<body class="bg-gray-900 text-white min-h-screen p-4 flex flex-col items-center justify-center">
+
+    <div class="w-full max-w-md bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-xl">
+        <div class="flex justify-between items-center border-b border-gray-700 pb-3 mb-4">
+            <h3 class="text-lg font-bold text-amber-400 flex items-center gap-2">
+                <i class="fa-solid fa-clock"></i> Jadwal Sesi Pasar
+            </h3>
+            <span id="server-time" class="text-xs text-gray-400 font-mono">--:--:-- WIB</span>
         </div>
 
-        <button id="hunt-btn" class="btn-hunt" onclick="startHunting()">🎯 Hunt Now !!</button>
-        <div id="status" class="status-text">⚡ System Online. Menunggu perintah eksekusi hunting...</div>
+        <!-- Container Jadwal Dinamis -->
+        <div id="market-schedule-list" class="space-y-3">
+            <div class="text-center text-gray-500 py-6 text-sm animate-pulse">
+                ⏳ Memuat jadwal dari database...
+            </div>
+        </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); 
+        const API_BASE_URL = "http://localhost:5001";
 
-        function startHunting() {
-            const btn = document.getElementById('hunt-btn');
-            const radar = document.getElementById('radar');
-            const status = document.getElementById('status');
-            const desc = document.getElementById('desc');
-
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
-
-            btn.style.display = 'none';
-            radar.style.display = 'block';
-            desc.innerText = "Scanning nearby Bug's...";
-            
-            let progress = 0;
-            const texts = [
-                "📡 Mencari Koordinat Aset Langka...",
-                "🛡️ Menembus Pertahanan Sistem...",
-                "⚡ Menghitung potensi profit...",
-                "📦 Paket diamankan. Siap kirim...!"
-            ];
-            const interval = setInterval(() => {
-                status.innerText = texts[progress];
-                progress++;
+        async function updateMarketStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/market/schedule`);
                 
-                if (progress >= texts.length) {
-                    clearInterval(interval);
-                    finishHunting();
+                if (!response.ok) {
+                    throw new Error(`HTTP Error: ${response.status}`);
                 }
-            }, 1000);
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    const container = document.getElementById('market-schedule-list');
+
+                    if (!result.data || result.data.length === 0) {
+                        container.innerHTML = `<div class="text-center text-gray-400 py-4 text-sm">Tidak ada jadwal pasar tersedia.</div>`;
+                        return;
+                    }
+
+                    const cardsHtml = result.data.map(item => {
+                        const isOpen = item.status === "OPEN";
+                        const statusBadge = isOpen
+                            ? `<span class="text-xs font-semibold text-green-400 bg-green-500/10 px-2.5 py-1 rounded border border-green-500/20 animate-pulse">🟢 BUKA</span>`
+                            : `<span class="text-xs font-semibold text-red-400 bg-red-500/10 px-2.5 py-1 rounded border border-red-500/20">🔴 TUTUP</span>`;
+
+                        return `
+                            <div class="flex justify-between items-center p-3 bg-gray-900/60 rounded-xl border border-gray-700/80 hover:border-amber-500/50 transition">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <span class="font-bold text-white text-sm">📦 ${item.name}</span>
+                                        <span class="text-[10px] text-gray-400 font-mono">(${item.item_key})</span>
+                                    </div>
+                                    <p class="text-xs text-gray-400">
+                                        ⏰ Jam: <span class="text-gray-200 font-semibold">${item.start_time} - ${item.end_time}</span> | Hold: <span class="text-gray-200 font-semibold">${item.hold_days} d</span>
+                                    </p>
+                                </div>
+                                <div class="text-right flex flex-col items-end gap-1.5">
+                                    ${statusBadge}
+                                    <div class="flex items-center gap-2 text-xs">
+                                        <span class="text-green-400 font-bold">+${item.profit_percent}%</span>
+                                        <span class="text-amber-400 font-medium font-mono">${item.point_now} pts</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+
+                    container.innerHTML = cardsHtml;
+                }
+            } catch (err) {
+                console.error("Gagal memperbarui jadwal:", err);
+                const container = document.getElementById('market-schedule-list');
+                container.innerHTML = `
+                    <div class="text-center text-red-400 py-4 text-sm bg-red-500/10 rounded-xl border border-red-500/20">
+                        ❌ Gagal terhubung ke server API.
+                    </div>
+                `;
+            }
         }
 
-        function finishHunting() {
-            const status = document.getElementById('status');
-            status.style.color = "#00ff88";
-            status.innerText = "🎯 HUNT SUCCESSFUL!";
-
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-            setTimeout(() => {
-                tg.sendData("proses_hunt");
-                tg.close();
-            }, 800);
+        // Tampilkan jam server berjalan (WIB)
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('id-ID', { timeZone: 'Asia/Jakarta' });
+            document.getElementById('server-time').innerText = timeString + " WIB";
         }
+
+        // Jalankan saat halaman pertama load
+        updateMarketStatus();
+        updateClock();
+
+        // Refresh data otomatis
+        setInterval(updateMarketStatus, 10000);
+        setInterval(updateClock, 1000);
     </script>
 </body>
 </html>
