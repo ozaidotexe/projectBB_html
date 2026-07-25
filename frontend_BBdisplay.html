@@ -29,6 +29,7 @@
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+		<!-- LOGIN SECTION -->
         <div id="login-section" class="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-md mx-auto my-12 shadow-xl">
             <h2 class="text-xl font-bold mb-4 text-center text-amber-500"><i class="fa-solid fa-right-to-bracket mr-2"></i>Masuk ke Arena Game</h2>
             <p class="text-sm text-gray-400 mb-6 text-center">Masukkan User ID Anda untuk memuat data dari database database.</p>
@@ -39,11 +40,13 @@
                 </button>
             </div>
         </div>
-
+		
+		<!-- GAME DASHBOARD -->
         <div id="game-dashboard" class="hidden space-y-8 animate-fade-in">
             
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
+                <!-- KIRI: PROFIL & SETTINGS -->
                 <div class="space-y-6">
                     <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-lg">
                         <h3 class="text-lg font-bold border-b border-gray-700 pb-2 mb-4 text-amber-400"><i class="fa-solid fa-user-shield mr-2"></i>Profil Player</h3>
@@ -63,7 +66,7 @@
                                 <i class="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
                             </button>
                             <button onclick="alert('Fitur transfer poin antar player')" class="w-full text-left bg-gray-900 hover:bg-gray-750 p-2.5 rounded-lg border border-gray-700 text-sm flex justify-between items-center transition cursor-pointer">
-                                <span><i class="fa-solid fa-paper-plane mr-2 text-paper text-green-400"></i>Kirim Poin (/kirim_poin)</span>
+                                <span><i class="fa-solid fa-paper-plane mr-2 text-green-400"></i>Kirim Poin (/kirim_poin)</span>
                                 <i class="fa-solid fa-chevron-right text-gray-500 text-xs"></i>
                             </button>
                         </div>
@@ -78,7 +81,8 @@
                         </div>
                     </div>
                 </div>
-
+				
+				<!-- KANAN: ARENA HUNTING & KOLEKSI ASET -->
                 <div class="lg:col-span-2 space-y-6">
                     
                     <div class="bg-gray-800 border-2 border-amber-500/50 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
@@ -109,6 +113,7 @@
                         </div>
 
                         <div class="text-center py-4">
+						<div id="hunt-notification" style="display: none; padding: 12px 16px; margin: 15px 0; border-radius: 8px; font-weight: bold; text-align: center; transition: all 0.3s ease;"></div>
                             <button id="btn-hunt" onclick="processHunt()" class="w-full md:w-2/3 bg-gradient-to-r from-amber-500 to-orange-600 text-gray-900 font-black text-lg py-4 px-8 rounded-xl shadow-lg shadow-orange-900/30 hover:scale-[1.02] active:scale-[0.98] transition duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                 🎯 MULAI HUNTING SEKARANG
                             </button>
@@ -118,7 +123,7 @@
 
                     <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-lg">
                         <h3 class="text-lg font-bold border-b border-gray-700 pb-2 mb-4 text-amber-400">
-                            <i class="fa-solid fa-folder-open mr-2"></i>Koleksi Kotak Aset Anda (`user_assets`)
+                            <i class="fa-solid fa-folder-open mr-2"></i>Koleksi Kotak Aset Anda
                         </h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left border-collapse text-sm">
@@ -142,14 +147,23 @@
                 </div>
             </div>
 
-            <!-- Bagian HTML Jadwal Sesi Pasar -->
-			<div class="card">
-				<div class="card-header">
-					<h3>🕒 Jadwal Sesi Pasar (/market)</h3>
+            <!-- ================= JADWAL SESI PASAR (INTEGRATED) ================= -->
+			<div class="bg-slate-800 border border-slate-700 rounded-xl p-5 shadow-lg mb-6">
+				<div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
+					<h3 class="text-lg font-bold text-yellow-400 flex items-center gap-2">
+						<i class="fas fa-store"></i> Jadwal & Status Sesi Pasar
+					</h3>
+					<div class="text-xs text-slate-400">
+						Jam Server: <span id="server-time" class="font-mono text-white font-semibold">--:--:-- WIB</span>
+					</div>
 				</div>
-				<!-- Ubah pembungkus item-itemnya menjadi seperti ini: -->
-				<div id="market-schedule-list" class="market-list">
-					<!-- Isi lama (Bronze/Silver/Gold) hapus saja atau biarkan, nanti akan ditimpa otomatis oleh JS -->
+
+				<!-- Container Kartu Sesi Market -->
+				<div id="market-schedule-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					<!-- Data jadwal akan dirender otomatis oleh JavaScript di sini -->
+					<div class="col-span-full text-center text-slate-400 py-4">
+						<i class="fas fa-spinner fa-spin mr-2"></i> Memuat jadwal pasar...
+					</div>
 				</div>
 			</div>
 
@@ -255,7 +269,7 @@
                     ? data.active_market.profit_percent * 100 
                     : data.active_market.profit_percent;
 
-                document.getElementById('market-item-name').innerText = data.active_market.item_name;
+                document.getElementById('market-item-name').innerText = data.active_market.item_name || data.active_market.item_key || "-";
                 document.getElementById('market-item-range').innerText = `Rp${Number(data.active_market.price_min).toLocaleString('id-ID')} - Rp${Number(data.active_market.price_max).toLocaleString('id-ID')}`;
                 document.getElementById('market-item-profit').innerText = `+${profitPct}%`;
                 document.getElementById('market-item-hold').innerText = `${data.active_market.hold_days} Hari`;
@@ -268,30 +282,39 @@
 
             // Tabel Aset
             const tableBody = document.getElementById('asset-table-body');
-            tableBody.innerHTML = ""; 
+			if (tableBody && data.assets) {
+				tableBody.innerHTML = '';
+				
+				if (data.assets.length === 0) {
+					tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Belum ada aset dimiliki</td></tr>`;
+				} else {
+					data.assets.forEach(asset => {
+						const row = document.createElement('tr');
+						row.className = "border-b border-gray-800 hover:bg-gray-800/50 transition-colors";
+						
+						// Menggunakan asset_id atau id, item_name atau item_key
+						const assetId = asset.asset_id || asset.id || '-';
+						const itemName = asset.item_name || asset.item_key || 'Unknown Item';
+						const buyPrice = asset.buy_price ? Number(asset.buy_price).toLocaleString('id-ID') : '0';
+						const status = asset.status || (asset.is_selling ? 'SELLING' : 'HOLD');
 
-            if(!data.assets || data.assets.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Anda belum memiliki kotak aset digital saat ini.</td></tr>`;
-            } else {
-                data.assets.forEach(asset => {
-                    const row = document.createElement('tr');
-                    row.className = "border-b border-gray-800 hover:bg-gray-800/50 transition-colors";
-                    row.innerHTML = `
-                        <td class="px-6 py-4 font-mono text-sm text-gray-400">#${asset.asset_id}</td>
-                        <td class="px-6 py-4 font-semibold text-amber-400">${asset.item_name}</td>
-                        <td class="px-6 py-4 text-green-400 font-mono">Rp ${Number(asset.buy_price).toLocaleString('id-ID')}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2.5 py-1 rounded-full text-xs font-medium ${asset.status === 'HOLD' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}">
-                                ${asset.status}
-                            </span>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            }
+						row.innerHTML = `
+							<td class="px-6 py-4 font-mono text-sm text-gray-400">#${assetId}</td>
+							<td class="px-6 py-4 font-semibold text-amber-400">${itemName}</td>
+							<td class="px-6 py-4 text-green-400 font-mono">Rp ${buyPrice}</td>
+							<td class="px-6 py-4">
+								<span class="px-2.5 py-1 rounded-full text-xs font-medium ${status === 'HOLD' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-green-500/10 text-green-400 border border-green-500/20'}">
+									${status}
+								</span>
+							</td>
+						`;
+						tableBody.appendChild(row);
+					});
+				}
+			}
 
             // Jadwal Sesi Pasar Dinamis
-            const scheduleContainer = document.getElementById('market-schedule-list');
+            const scheduleContainer = document.getElementById('market-schedule-container');
             if (scheduleContainer && data.all_markets && data.all_markets.length > 0) {
                 scheduleContainer.innerHTML = ''; 
 
@@ -323,68 +346,166 @@
 
         // 4. FUNGSI HUNTING
         async function processHunt() {
-            if (!currentPlayerId) {
-                alert("Silakan login terlebih dahulu!");
-                return;
-            }
+			// 1. Cek Login
+			if (!currentPlayerId) {
+				alert("Silakan login terlebih dahulu!");
+				return;
+			}
 
-            const btn = document.getElementById('btn-hunt');
-            const cooldownDisplay = document.getElementById('cooldown-display');
+			const btn = document.getElementById('btn-hunt');
+			const cooldownDisplay = document.getElementById('cooldown-display');
 
-            btn.disabled = true;
-            cooldownDisplay.classList.remove('hidden');
-            cooldownDisplay.innerText = "⏳ Memproses aksi berburu di server...";
+			if (btn) btn.disabled = true;
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/user/hunt`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: currentPlayerId })
-                });
-                const result = await response.json();
-                
-                if(result.status === "success") {
-                    cooldownDisplay.innerText = "🎉 " + result.message;
-                    cooldownDisplay.className = "text-xs text-green-400 mt-2 font-semibold";
+			// Tampilkan Status Loading Awal
+			cooldownDisplay.classList.remove('hidden');
+			cooldownDisplay.className = "text-xs text-yellow-400 mt-2 font-semibold";
+			cooldownDisplay.innerText = "⏳ Memproses aksi berburu di server...";
 
-                    const refreshRes = await fetch(`${API_BASE_URL}/api/user/info?user_id=${currentPlayerId}`);
-                    const refreshData = await refreshRes.json();
-                    if(refreshData.status === "success") {
-                        renderDashboardData(refreshData.data);
-                    }
-                } else {
-                    cooldownDisplay.innerText = "❌ " + result.message;
-                    cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
-                }
+			try {
+				// 2. Kirim Request ke Server
+				const response = await fetch(`${API_BASE_URL}/api/user/hunt`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ user_id: currentPlayerId })
+				});
 
-                let sisaWaktu = 20;
-                const interval = setInterval(() => {
-                    sisaWaktu--;
-                    cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
-                    cooldownDisplay.innerText = `⏳ Cooldown aktif (${sisaWaktu} detik)...`;
-                    if(sisaWaktu <= 0) {
-                        clearInterval(interval);
-                        btn.disabled = false;
-                        cooldownDisplay.classList.add('hidden');
-                    }
-                }, 1000);
+				const result = await response.json();
 
-            } catch (err) {
-                cooldownDisplay.innerText = "❌ Koneksi ke backend gagal!";
-                cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
-                btn.disabled = false;
-            }
-        }
+				// 3. Tampilkan Notifikasi Hasil di Layar
+				if (response.ok && result.status === "success") {
+					
+					if (result.result === 'win' || !result.result) {
+						// Tampilan BERHASIL (Hijau)
+						cooldownDisplay.innerText = "🎉 " + (result.message || "Hunting Berhasil!");
+						cooldownDisplay.className = "text-xs text-green-400 mt-2 font-semibold";
+					} else {
+						// Tampilan GAGAL / ZONK (Kuning/Oranye)
+						cooldownDisplay.innerText = "💨 " + (result.message || "Hunting Gagal!");
+						cooldownDisplay.className = "text-xs text-yellow-400 mt-2 font-semibold";
+					}
 
+					// 4. Update Data Dashboard tanpa reload halaman
+					try {
+						const refreshRes = await fetch(`${API_BASE_URL}/api/user/info?user_id=${currentPlayerId}`);
+						const refreshData = await refreshRes.json();
+						if (refreshData.status === "success") {
+							renderDashboardData(refreshData.data);
+						}
+					} catch (refErr) {
+						console.error("Gagal refresh dashboard:", refErr);
+					}
+
+				} else {
+					// Tampilan ERROR dari Server (Merah)
+					cooldownDisplay.innerText = "❌ " + (result.message || "Terjadi kesalahan!");
+					cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
+				}
+
+			} catch (err) {
+				console.error('Hunt Error:', err);
+				cooldownDisplay.innerText = "❌ Koneksi ke backend gagal!";
+				cooldownDisplay.className = "text-xs text-red-400 mt-2 font-semibold";
+			} finally {
+				// 5. Jalankan Cooldown Timer (20 Detik)
+				let sisaWaktu = 20;
+				const interval = setInterval(() => {
+					sisaWaktu--;
+					cooldownDisplay.className = "text-xs text-gray-400 mt-2 font-semibold";
+					cooldownDisplay.innerText = `⏳ Cooldown aktif (${sisaWaktu} detik)...`;
+
+					if (sisaWaktu <= 0) {
+						clearInterval(interval);
+						if (btn) btn.disabled = false;
+						cooldownDisplay.classList.add('hidden');
+					}
+				}, 1000);
+			}
+		}
+		
+		
+		// -------------------------------------------------------------
+        // ➕ KODE BARU (FITUR JADWAL PASAR INTEGRASI)
+        // -------------------------------------------------------------
+		// URL Backend API
+		const API_MARKET_SCHEDULE = 'http://localhost:5001/api/market/schedule';
+
+		// 1. Fungsi Mengambil & Menampilkan Jadwal Sesi Pasar
+		async function fetchMarketSchedule() {
+			try {
+				const response = await fetch(API_MARKET_SCHEDULE);
+				const data = await response.json();
+
+				if (data.status === 'success' && data.schedule) {
+					renderMarketSchedule(data.schedule);
+				}
+			} catch (error) {
+				console.error('Gagal mengambil data jadwal pasar:', error);
+			}
+		}
+
+		// 2. Fungsi Render HTML Kartu Sesi Market
+		function renderMarketSchedule(schedule) {
+			const container = document.getElementById('market-schedule-container');
+			if (!container) return;
+
+			container.innerHTML = ''; // Bersihkan loading
+
+			schedule.forEach(item => {
+				const isOpen = item.status === 'OPEN';
+				const statusBadge = isOpen 
+					? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs px-2.5 py-1 rounded-full font-bold">BUKA</span>`
+					: `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-2.5 py-1 rounded-full font-bold">TUTUP</span>`;
+
+				const cardHTML = `
+					<div class="bg-slate-900/80 border ${isOpen ? 'border-emerald-500/50' : 'border-slate-700'} rounded-lg p-4 flex flex-col justify-between transition-all">
+						<div>
+							<div class="flex justify-between items-start mb-2">
+								<h4 class="font-bold text-white text-base">${item.item_name || 'Item'}</h4>
+								${statusBadge}
+							</div>
+							<div class="text-xs text-slate-300 space-y-1 mb-3">
+								<p><i class="far fa-clock text-slate-400 mr-1"></i> Sesi: <span class="text-white font-mono">${item.start_time} - ${item.end_time} WIB</span></p>
+								<p><i class="fas fa-hand-holding-usd text-slate-400 mr-1"></i> Profit: <span class="text-emerald-400 font-bold">+${item.profit_percent}%</span></p>
+								<p><i class="fas fa-coins text-slate-400 mr-1"></i> Biaya Poin: <span class="text-yellow-400 font-bold">${item.point_cost} Poin</span></p>
+								<p><i class="fas fa-hourglass-half text-slate-400 mr-1"></i> Masa Hold: <span class="text-sky-400">${item.hold_days} Hari</span></p>
+							</div>
+						</div>
+					</div>
+				`;
+				container.insertAdjacentHTML('beforeend', cardHTML);
+			});
+		}
+
+		// 3. Fungsi Update Jam Server Realtime
+		function updateServerClock() {
+			const clockEl = document.getElementById('server-time');
+			if (!clockEl) return;
+			
+			const now = new Date();
+			// Konversi ke Waktu Indonesia Barat (WIB / UTC+7)
+			const options = { timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+			clockEl.textContent = `${now.toLocaleTimeString('id-ID', options)} WIB`;
+		}
+
+		// 4. Jalankan Otomatis Saat Halaman Dimuat
+		document.addEventListener('DOMContentLoaded', () => {
+			fetchMarketSchedule();
+			updateServerClock();
+
+			// Refresh data jadwal tiap 10 detik
+			setInterval(fetchMarketSchedule, 10000);
+
+			// Refresh jam tiap 1 detik
+			setInterval(updateServerClock, 1000);
+		});		
+		
         // 5. FUNGSI COPY REFERRAL
         function copyRef() {
             const linkText = document.getElementById('ref-link').innerText;
             navigator.clipboard.writeText(linkText);
             alert("Link referral sukses disalin ke papan klip!");
         }
-
-        updateMarketStatus();
-        setInterval(updateMarketStatus, 30000);
     </script>
 </body>
 </html>
